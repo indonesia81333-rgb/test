@@ -18,9 +18,8 @@ app = Client(
 )
 wasabi = WasabiHandler()
 
-# Store user file mappings (In production, use database)
+# Store user file mappings
 user_files = {}
-user_progress = {}
 
 async def update_progress(current: int, total: int, message: Message, operation: str):
     """Update progress message"""
@@ -312,7 +311,8 @@ async def handle_file_upload(client: Client, message: Message):
     )
     
     # Clean up
-    os.remove(download_path)
+    if os.path.exists(download_path):
+        os.remove(download_path)
     
     if result["success"]:
         file_id = hashlib.md5(file_key.encode()).hexdigest()[:16]
