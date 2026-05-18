@@ -28,3 +28,15 @@ class Config:
     
     # Allowed file types (empty list = all files allowed)
     ALLOWED_EXTENSIONS = []  # Example: ['mp4', 'mkv', 'mp3', 'pdf']
+#Public web url
+PUBLIC_WEB_URL = os.environ.get("PUBLIC_WEB_URL", f"http://localhost:{FLASK_PORT}")
+
+# Optional: Enable/Disable features
+ENABLE_WEB_INTERFACE = True  # Set to False to disable Flask server
+ENABLE_PRESIGNED_URLS = True  # Set to False to disable presigned URL generation
+LINK_EXPIRY_SECONDS = 604800  # 7 days default
+MAX_FILE_SIZE_MB = 2000  # 2GB limit for Telegram
+
+# Logging configuration
+LOG_LEVEL = "INFO"
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
