@@ -1,7 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 import os
-import asyncio
 import hashlib
 from datetime import datetime
 from config import Config
@@ -20,22 +19,6 @@ wasabi = WasabiHandler()
 
 # Store user file mappings
 user_files = {}
-
-async def update_progress(current: int, total: int, message: Message, operation: str):
-    """Update progress message"""
-    try:
-        percent = (current / total) * 100
-        bar_length = 20
-        filled = int(bar_length * current // total)
-        bar = "█" * filled + "░" * (bar_length - filled)
-        
-        text = f"**{operation}**\n"
-        text += f"```\n{bar} {percent:.1f}%\n```\n"
-        text += f"📦 {format_file_size(current)} / {format_file_size(total)}"
-        
-        await message.edit_text(text)
-    except Exception as e:
-        print(f"Progress update error: {e}")
 
 @app.on_message(filters.command("start"))
 async def start_command(client: Client, message: Message):
@@ -109,7 +92,7 @@ async def list_files_command(client: Client, message: Message):
     """Handle /list command"""
     status_msg = await message.reply_text("📋 **Fetching your files...**")
     
-    files = await wasabi.list_files()
+    files = wasabi.list_files()  # Remove await - now sync
     
     if not files:
         await status_msg.edit_text("❌ **No files found!**\n\nUpload a file using /upload")
@@ -174,7 +157,7 @@ async def download_command(client: Client, message: Message):
     file_name = os.path.basename(file_key)
     
     # Generate download link
-    download_url = await wasabi.get_direct_download_url(file_key, file_name)
+    download_url = wasabi.get_direct_download_url(file_key, file_name)  # Remove await
     
     if download_url:
         file_size = wasabi.get_file_size(file_key)
@@ -213,7 +196,7 @@ async def stream_command(client: Client, message: Message):
         await message.reply_text("❌ **This file type cannot be streamed!**\n\nOnly video/audio files are supported.")
         return
     
-    stream_url = await wasabi.generate_presigned_url(file_key)
+    stream_url = wasabi.generate_presigned_url(file_key)  # Remove await
     
     if stream_url:
         await message.reply_text(
@@ -235,7 +218,7 @@ async def test_command(client: Client, message: Message):
     """Test Wasabi connection"""
     test_msg = await message.reply_text("🔄 **Testing Wasabi connection...**")
     
-    if await wasabi.test_connection():
+    if wasabi.test_connection():  # Remove await
         await test_msg.edit_text(
             "✅ **Wasabi Connected!**\n\n"
             f"📦 Bucket: `{Config.WASABI_BUCKET}`\n"
@@ -283,32 +266,25 @@ async def handle_file_upload(client: Client, message: Message):
         return
     
     # Start upload process
-    progress_msg = await message.reply_text(f"📥 **Downloading from Telegram...**\n\n0%")
+    status_msg = await message.reply_text(f"📥 **Downloading: {file_name}**\n\n0%")
     
     # Download file
     download_path = await client.download_media(
         message,
-        file_name=f"{message.from_user.id}_{datetime.now().timestamp()}_{file_name}",
-        progress=lambda c, t: asyncio.create_task(
-            update_progress(c, t, progress_msg, "Downloading from Telegram")
-        )
+        file_name=f"{message.from_user.id}_{datetime.now().timestamp()}_{file_name}"
     )
     
     if not download_path:
-        await progress_msg.edit_text("❌ **Download failed!**")
+        await status_msg.edit_text("❌ **Download failed!**")
         return
     
-    await progress_msg.edit_text(f"📤 **Uploading to Wasabi...**\n\n0%")
+    await status_msg.edit_text(f"📤 **Uploading to Wasabi: {file_name}**\n\n0%")
     
     # Generate unique file key
     file_key = f"users/{message.from_user.id}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file_name}"
     
-    # Upload to Wasabi
-    result = await wasabi.upload_file(
-        download_path,
-        file_key,
-        lambda p: asyncio.create_task(update_progress(int(p * file_size / 100), file_size, progress_msg, "Uploading to Wasabi"))
-    )
+    # Upload to Wasabi (sync)
+    result = wasabi.upload_file(download_path, file_key)
     
     # Clean up
     if os.path.exists(download_path):
@@ -318,7 +294,7 @@ async def handle_file_upload(client: Client, message: Message):
         file_id = hashlib.md5(file_key.encode()).hexdigest()[:16]
         user_files[file_id] = file_key
         
-        await progress_msg.edit_text(
+        await status_msg.edit_text(
             f"✅ **Upload Complete!**\n\n"
             f"📁 **File:** `{file_name}`\n"
             f"📦 **Size:** `{format_file_size(file_size)}`\n"
@@ -330,7 +306,7 @@ async def handle_file_upload(client: Client, message: Message):
             reply_markup=get_file_keyboard(file_id, get_file_type(file_name))
         )
     else:
-        await progress_msg.edit_text(f"❌ **Upload Failed!**\n\nError: {result.get('error', 'Unknown error')}")
+        await status_msg.edit_text(f"❌ **Upload Failed!**\n\nError: {result.get('error', 'Unknown error')}")
 
 @app.on_callback_query()
 async def handle_callbacks(client: Client, callback_query: CallbackQuery):
@@ -388,7 +364,7 @@ async def handle_callbacks(client: Client, callback_query: CallbackQuery):
             file_key = user_files[file_id]
             file_name = os.path.basename(file_key)
             
-            download_url = await wasabi.get_direct_download_url(file_key, file_name)
+            download_url = wasabi.get_direct_download_url(file_key, file_name)
             
             if download_url:
                 await callback_query.message.reply_text(
@@ -404,7 +380,7 @@ async def handle_callbacks(client: Client, callback_query: CallbackQuery):
             file_key = user_files[file_id]
             file_name = os.path.basename(file_key)
             
-            stream_url = await wasabi.generate_presigned_url(file_key)
+            stream_url = wasabi.generate_presigned_url(file_key)
             
             if stream_url:
                 await callback_query.message.reply_text(
