@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Wasabi Cloud Storage Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* Stats Grid */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        /* Controls */
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .search-box {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .filter-select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .refresh-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* File Grid */
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .file-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .file-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .file-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .file-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            word-break: break-all;
+            font-size: 14px;
+        }
+
+        .file-meta {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-body label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .modal input, .modal select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .modal input:focus, .modal select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Loading and Error States */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: white;
+            font-size: 18px;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c53030;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #22543d;
+        }
+
+        .info {
+            background: #bee3f8;
+            color: #2c5282;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2c5282;
+        }
+
+        /* Spinner */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            color: #333;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1100;
+            animation: slideInRight 0.3s ease-out;
+            max-width: 350px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast.success {
+            border-left: 4px solid #48bb78;
+        }
+
+        .toast.error {
+            border-left: 4px solid #f56565;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            background: white;
+            border-radius: 15px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .file-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .search-box, .filter-select, .refresh-btn {
+                width: 100%;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>
+                <span>☁️</span>
+                Wasabi Cloud Storage Manager
+            </h1>
+            <div class="subtitle">Secure, fast, and scalable object storage management</div>
+            
+            <!-- Statistics Cards -->
+            <div class="stats" id="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Files</div>
+                    <div class="stat-value" id="fileCount">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Storage</div>
+                    <div class="stat-value" id="totalSize">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Bucket Name</div>
+                    <div class="stat-value" id="bucketName">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Region</div>
+                    <div class="stat-value" id="region">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="controls">
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search files by name...">
+            <select class="filter-select" id="fileTypeFilter">
+                <option value="all">All Files</option>
+                <option value="image">Images</option>
+                <option value="video">Videos</option>
+                <option value="audio">Audio</option>
+                <option value="document">Documents</option>
+                <option value="archive">Archives</option>
+            </select>
+            <button class="refresh-btn" onclick="loadFiles()">
+                🔄 Refresh
+            </button>
+        </div>
+
+        <!-- File List Section -->
+        <div id="fileList" class="file-grid"></div>
+    </div>
+
+    <!-- Link Generation Modal -->
+    <div id="linkModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">🔗 Generate Shareable Link</div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px; color: #666;">
+                    <strong>File:</strong> <span id="modalFileName" style="color: #333; word-break: break-all;"></span>
+                </p>
+                
+                <label>Link Expiry Duration:</label>
+                <select id="expiryPreset" onchange="updateExpiryValue()">
+                    <option value="3600">1 Hour</option>
+                    <option value="86400">1 Day</option>
+                    <option value="604800" selected>7 Days (Default)</option>
+                    <option value="2592000">30 Days</option>
+                    <option value="7776000">90 Days</option>
+                    <option value="31536000">1 Year</option>
+                    <option value="custom">Custom</option>
+                </select>
+                
+                <div id="customExpiryDiv" style="display: none;">
+                    <label>Custom Expiry (seconds):</label>
+                    <input type="number" id="customExpiry" placeholder="Enter seconds" value="604800">
+                </div>
+                
+                <div id="generatedLink" style="margin-top: 20px; display: none;">
+                    <label>🔗 Generated Download Link:</label>
+                    <input type="text" id="downloadLink" readonly onclick="this.select(); copyToClipboard()" 
+                           style="background: #f7fafc; font-size: 12px; cursor: pointer;">
+                    <small style="display: block; margin-top: 5px; color: #48bb78;">
+                        ✅ Click on the link to copy to clipboard
+                    </small>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="generateLink()">Generate Link</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Info Modal -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">ℹ️ File Information</div>
+            <div class="modal-body" id="fileInfoContent">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeInfoModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFileKey = null;
+        let currentFileInfo = null;
+        let allFiles = [];
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFiles();
+            loadConfig();
+            
+            // Add search debounce
+            const searchBox = document.getElementById('searchBox');
+            let searchTimeout;
+            searchBox.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => filterAndDisplayFiles(), 300);
+            });
+            
+            // Add filter change listener
+            document.getElementById('fileTypeFilter').addEventListener('change', () => {
+                filterAndDisplayFiles();
+            });
+        });
+
+        // Load configuration from server
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                if (response.ok) {
+                    const config = await response.json();
+                    document.title = `Wasabi Manager - ${config.bucket}`;
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+            }
+        }
+
+        // Load files from server
+        async function loadFiles() {
+            const fileListDiv = document.getElementById('fileList');
+            fileListDiv.innerHTML = '<div class="loading"><div class="spinner"></div> 📂 Loading files from Wasabi...</div>';
+            
+            try {
+                const response = await fetch('/api/files');
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                allFiles = data.files || [];
+                filterAndDisplayFiles();
+                await loadStats();
+                
+                showToast(`✅ Loaded ${allFiles.length} files`, 'success');
+            } catch (error) {
+                fileListDiv.innerHTML = `<div class="error">❌ Error loading files: ${error.message}</div>`;
+                showToast('Failed to load files', 'error');
+            }
+        }
+
+        // Filter and display files based on search and type
+        function filterAndDisplayFiles() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const fileType = document.getElementById('fileTypeFilter').value;
+            
+            let filteredFiles = allFiles.filter(file => {
+                // Search filter
+                const matchesSearch = file.filename.toLowerCase().includes(searchTerm);
+                
+                // Type filter
+                let matchesType = true;
+                if (fileType !== 'all') {
+                    const ext = file.filename.split('.').pop().toLowerCase();
+                    switch(fileType) {
+                        case 'image':
+                            matchesType = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
+                            break;
+                        case 'video':
+                            matchesType = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv'].includes(ext);
+                            break;
+                        case 'audio':
+                            matchesType = ['mp3', 'wav', 'ogg', 'flac', 'm4a'].includes(ext);
+                            break;
+                        case 'document':
+                            matchesType = ['pdf', 'doc', 'docx', 'txt', 'md', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext);
+                            break;
+                        case 'archive':
+                            matchesType = ['zip', 'rar', '7z', 'tar', 'gz'].includes(ext);
+                            break;
+                    }
+                }
+                
+                return matchesSearch && matchesType;
+            });
+            
+            displayFiles(filteredFiles);
+        }
+
+        // Display files in grid
+        function displayFiles(files) {
+            const fileListDiv = document.getElementById('fileList');
+            
+            if (files.length === 0) {
+                fileListDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📂</div>
+                        <h3>No files found</h3>
+                        <p>Upload files through the Telegram bot to see them here</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            fileListDiv.innerHTML = files.map(file => `
+                <div class="file-card" onclick="showFileInfo('${escapeHtml(file.key)}')">
+                    <div class="file-icon">${getFileIcon(file.filename)}</div>
+                    <div class="file-name" title="${escapeHtml(file.key)}">${escapeHtml(file.filename)}</div>
+                    <div class="file-meta">
+                        📦 Size: ${file.size_human}<br>
+                        🕒 Modified: ${new Date(file.last_modified).toLocaleString()}<br>
+                        🔑 Key: ${file.key.substring(0, 50)}${file.key.length > 50 ? '...' : ''}
+                    </div>
+                    <div class="file-actions" onclick="event.stopPropagation()">
+                        <button class="btn btn-primary" onclick="showLinkModal('${escapeHtml(file.key)}', '${escapeHtml(file.filename)}')">
+                            🔗 Get Link
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteFile('${escapeHtml(file.key)}')">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Get appropriate icon for file type
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                'pdf': '📄', 'doc': '📝', 'docx': '📝', 'txt': '📃', 'md': '📃',
+                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'webp': '🖼️',
+                'mp4': '🎥', 'mkv': '🎥', 'avi': '🎥', 'mov': '🎥',
+                'mp3': '🎵', 'wav': '🎵', 'ogg': '🎵', 'flac': '🎵',
+                'zip': '📦', 'rar': '📦', '7z': '📦', 'tar': '📦', 'gz': '📦',
+                'exe': '⚙️', 'msi': '⚙️',
+                'html': '🌐', 'css': '🎨', 'js': '📜', 'json': '📊',
+                'py': '🐍', 'java': '☕', 'cpp': '⚙️', 'c': '⚙️'
+            };
+            return icons[ext] || '📁';
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/bucket-info');
+                const data = await response.json();
+                
+                if (!data.error) {
+                    document.getElementById('fileCount').textContent = data.file_count || 0;
+                    document.getElementById('totalSize').textContent = data.total_size_human || '0 B';
+                    document.getElementById('bucketName').textContent = data.bucket_name || '-';
+                    document.getElementById('region').textContent = data.region || '-';
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Show link generation modal
+        function showLinkModal(key, filename) {
+            currentFileKey = key;
+            document.getElementById('modalFileName').textContent = filename;
+            document.getElementById('generatedLink').style.display = 'none';
+            document.getElementById('expiryPreset').value = '604800';
+            document.getElementById('customExpiryDiv').style.display = 'none';
+            document.getElementById('linkModal').style.display = 'flex';
+        }
+
+        // Update expiry value based on preset
+        function updateExpiryValue() {
+            const preset = document.getElementById('expiryPreset').value;
+            const customDiv = document.getElementById('customExpiryDiv');
+            
+            if (preset === 'custom') {
+                customDiv.style.display = 'block';
+            } else {
+                customDiv.style.display = 'none';
+            }
+        }
+
+        // Generate download link
+        async function generateLink() {
+            const preset = document.getElementById('expiryPreset').value;
+            let expiresIn;
+            
+            if (preset === 'custom') {
+                expiresIn = parseInt(document.getElementById('customExpiry').value);
+                if (isNaN(expiresIn) || expiresIn <= 0) {
+                    showToast('Please enter a valid expiry time', 'error');
+                    return;
+                }
+            } else {
+                expiresIn = parseInt(preset);
+            }
+            
+            const generateBtn = event.target;
+            const originalText = generateBtn.textContent;
+            generateBtn.textContent = '⏳ Generating...';
+            generateBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/generate-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        key: currentFileKey, 
+                        expires_in: expiresIn 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                document.getElementById('downloadLink').value = data.url;
+                document.getElementById('generatedLink').style.display = 'block';
+                
+                // Format expiry text
+                let expiryText = '';
+                if (expiresIn >= 86400) {
+                    expiryText = `${expiresIn / 86400} days`;
+                } else if (expiresIn >= 3600) {
+                    expiryText = `${expiresIn / 3600} hours`;
+                } else {
+                    expiryText = `${expiresIn} seconds`;
+                }
+                
+                showToast(`✅ Link generated! Expires in ${expiryText}`, 'success');
+            } catch (error) {
+                showToast('Error generating link: ' + error.message, 'error');
+            } finally {
+                generateBtn.textContent = originalText;
+                generateBtn.disabled = false;
+            }
+        }
+
+        // Copy link to clipboard
+        async function copyToClipboard() {
+            const linkInput = document.getElementById('downloadLink');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999);
+            
+            try {
+                await navigator.clipboard.writeText(linkInput.value);
+                showToast('✅ Link copied to clipboard!', 'success');
+            } catch (err) {
+                showToast('Failed to copy link', 'error');
+            }
+        }
+
+        // Delete file
+        async function deleteFile(key) {
+            if (!confirm('⚠️ Are you sure you want to delete this file?\n\nThis action cannot be undone!')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/delete-file', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: key })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                showToast('✅ File deleted successfully', 'success');
+                await loadFiles(); // Reload file list
+            } catch (error) {
+                showToast('Error deleting file: ' + error.message, 'error');
+            }
+        }
+
+        // Show file information
+        async function showFileInfo(key) {
+            try {
+                const response = await fetch('/api/files');
+                const data = await response.json();
+                const file = data.files.find(f => f.key === key);
+                
+                if (file) {
+                    const infoHtml = `
+                        <p><strong>📁 File Name:</strong><br>${escapeHtml(file.filename)}</p>
+                        <p><strong>🔑 File Key:</strong><br><code style="font-size: 12px; word-break: break-all;">${escapeHtml(file.key)}</code></p>
+                        <p><strong>📦 File Size:</strong><br>${file.size_human} (${file.size.toLocaleString()} bytes)</p>
+                        <p><strong>🕒 Last Modified:</strong><br>${new Date(file.last_modified).toLocaleString()}</p>
+                        <p><strong>🔗 Full Path:</strong><br><code style="font-size: 12px; word-break: break-all;">wasabi://${bucketName}/${file.key}</code></p>
+                    `;
+                    document.getElementById('fileInfoContent').innerHTML = infoHtml;
+                    document.getElementById('infoModal').style.display = 'flex';
+                }
+            } catch (error) {
+                showToast('Error loading file info', 'error');
+            }
+        }
+
+        // Close modals
+        function closeModal() {
+            document.getElementById('linkModal').style.display = 'none';
+            currentFileKey = null;
+        }
+
+        function closeInfoModal() {
+            document.getElementById('infoModal').style.display = 'none';
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const linkModal = document.getElementById('linkModal');
+            const infoModal = document.getElementById('infoModal');
+            
+            if (event.target === linkModal) {
+                closeModal();
+            }
+            if (event.target === infoModal) {
+                closeInfoModal();
+            }
+        }
+
+        // Auto-refresh every 60 seconds
+        let autoRefreshInterval = setInterval(() => {
+            loadFiles();
+        }, 60000);
+        
+        // Stop auto-refresh when page is hidden to save resources
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                clearInterval(autoRefreshInterval);
+            } else {
+                autoRefreshInterval = setInterval(() => {
+                    loadFiles();
+                }, 60000);
+                loadFiles(); // Refresh immediately when tab becomes visible
+            }
+        });
+    </script>
+</body>
+</html>
