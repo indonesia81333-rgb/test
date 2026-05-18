@@ -29,7 +29,7 @@ class Config:
     # Allowed file types (empty list = all files allowed)
     ALLOWED_EXTENSIONS = []  # Example: ['mp4', 'mkv', 'mp3', 'pdf']
 #Public web url
-PUBLIC_WEB_URL = os.environ.get("PUBLIC_WEB_URL", f"http://localhost:{FLASK_PORT}")
+PUBLIC_WEB_URL = os.environ.get("PUBLIC_WEB_URL", f"http://localhost:{8080}")
 
 # Optional: Enable/Disable features
 ENABLE_WEB_INTERFACE = True  # Set to False to disable Flask server
