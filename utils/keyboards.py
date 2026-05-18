@@ -1,7 +1,7 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 def get_main_keyboard():
-    """Get main menu keyboard"""
+    """Main menu keyboard"""
     keyboard = [
         [
             InlineKeyboardButton("📤 Upload", callback_data="upload"),
@@ -12,22 +12,21 @@ def get_main_keyboard():
             InlineKeyboardButton("🎥 Stream", callback_data="stream_help")
         ],
         [
-            InlineKeyboardButton("ℹ️ Help", callback_data="help"),
-            InlineKeyboardButton("🔧 Test", callback_data="test")
+            InlineKeyboardButton("🔧 Test", callback_data="test"),
+            InlineKeyboardButton("❓ Help", callback_data="help")
         ]
     ]
     return InlineKeyboardMarkup(keyboard)
 
-def get_file_keyboard(file_id, file_type):
-    """Get file-specific action keyboard"""
+def get_file_keyboard(file_id: str, file_type: str):
+    """File-specific keyboard"""
     buttons = [
         [InlineKeyboardButton("📥 Download", callback_data=f"download_{file_id}")]
     ]
     
     if file_type in ["video", "audio"]:
-        buttons.append([InlineKeyboardButton("🎬 Stream to MX Player/VLC", callback_data=f"stream_{file_id}")])
-        buttons.append([InlineKeyboardButton("🌐 Open in Web Player", callback_data=f"web_{file_id}")])
+        buttons.append([InlineKeyboardButton("🎬 Stream", callback_data=f"stream_{file_id}")])
     
-    buttons.append([InlineKeyboardButton("🔙 Back to Files", callback_data="refresh_list")])
+    buttons.append([InlineKeyboardButton("🔙 Back", callback_data="back")])
     
     return InlineKeyboardMarkup(buttons)
