@@ -1,17 +1,29 @@
+# Dockerfile for Fly.io deployment
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy and install dependencies
-COPY . .
-RUN pip3 install -r requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy app code
+# Copy requirements first for better caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
 COPY . .
 
-EXPOSE 5000
+# Create downloads directory
+RUN mkdir -p /app/downloads
+
+# Expose port
+EXPOSE 8000
 
 # Health check
-HEALTHCHECK CMD curl -f http://localhost:5000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
+# Run the bot
 CMD ["python", "bot.py"]
