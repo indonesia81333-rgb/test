@@ -1,0 +1,98 @@
+# fly.toml configuration for Wasabi Telegram Bot
+
+app = "wasabi-telegram-bot"
+
+[build]
+  # Use Python builder
+  [build.args]
+    PYTHON_VERSION = "3.11"
+
+[env]
+  # Telegram Configuration
+  API_ID = "API_ID"
+  API_HASH = "API_HASH"
+  BOT_TOKEN = "BOT_TOKEN"
+  
+  # Wasabi Configuration
+  WASABI_ACCESS_KEY = "WASABI_ACCESS_KEY"
+  WASABI_SECRET_KEY = "WASABI_SECRET_KEY"
+  WASABI_BUCKET = "WASABI_BUCKET"
+  WASABI_REGION = "WASABI_REGION"
+  
+  # Flask Web Interface Configuration
+  FLASK_HOST = "0.0.0.0"
+  FLASK_PORT = "8000"
+  PUBLIC_WEB_URL = "PUBLIC_WEB_URL"
+  
+  # Bot Configuration
+  LINK_EXPIRY_SECONDS = "604800"
+  MAX_FILE_SIZE_MB = "2000"
+  ENABLE_WEB_INTERFACE = "True"
+
+[http_service]
+  # Internal port for Flask app
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "15s"
+    timeout = "5s"
+    method = "get"
+    path = "/health"
+    protocol = "http"
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 250
+    soft_limit = 200
+
+[[vm]]
+  # Machine configuration
+  memory = "1024mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[mounts]
+  # Persistent storage for downloads
+  source = "wasabi_data"
+  destination = "/app/./downloads"
+
+[metrics]
+  # Prometheus metrics endpoint
+  port = 9090
+  path = "/metrics"
+
+[processes]
+  # Define process types
+  app = "python bot.py"
+
+[deploy]
+  # Deployment strategy
+  strategy = "rolling"
+  max_unavailable = "25%"
+
+[experimental]
+  # Enable auto rollback
+  auto_rollback = true
+
+# Optional: Scale configuration
+[scale]
+  # Number of machines to run
+  min = 1
+  max = 3
+
+# Optional: Logging configuration
+[logging]
+  # Send logs to Fly.io
+  [logging.fly]
+    enable = true
+
+# Optional: Private IP networking
+[services]
+  # Enable internal networking between machines
+  enable_internal_networking = true
