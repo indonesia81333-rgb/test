@@ -23,7 +23,7 @@ class Config:
     CHUNK_SIZE = 1024 * 1024  # 1MB chunks
     
     # Bot Configuration
-    DOWNLOAD_DIR = "downloads"
+    DOWNLOAD_DIR = "./downloads"
     STREAM_EXPIRY = 3600  # 1 hour
     
     # Allowed file types (empty list = all files allowed)
